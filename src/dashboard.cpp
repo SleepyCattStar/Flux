@@ -6,6 +6,7 @@
 #include<fstream>   // to make export data to csv file 
 #include<string>    
 #include <filesystem>  
+#include<chrono>
 
 void ui::render() {
     ImGui::SetNextWindowPos(ImVec2(20, 20), ImGuiCond_FirstUseEver);
@@ -28,37 +29,20 @@ void ui::render() {
 }
 
 
+
 void ui::graph() {
     ImGui::SetNextWindowPos(ImVec2(350, 20), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
     
     ImGui::Begin("Live Audio Graph", NULL, ImGuiWindowFlags_MenuBar);
 
-    static bool isPaused = false;
-    static std::vector<float> displayData(2048, 0.0f);
-
+    // ==========================================
+    // THE MENU BAR (Your exact File/CSV Logic!)
+    // ==========================================
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
-            // if (ImGui::MenuItem("Export Snapshot to CSV")) {
-            //     std::ofstream file("waveform_snapshot.csv");
-            //     if (file.is_open()) {
-            //         file << "Index,Amplitude\n";
-            //         for (size_t i = 0; i < displayData.size(); i++) {
-            //             file << i << "," << displayData[i] << "\n";
-            //         }
-            //         file.close();
-            //         std::cout << "[SYSTEM] Graph data exported to waveform_snapshot.csv\n";
-            //     }
-            //     else
-            //         {
-            //             std::cout << "[ERROR] Failed to export graph data.\n";
-            //         }
-            // }
-
-
-            // Bwetter File handling and proper folder structure
+            
             if (ImGui::MenuItem("Export Snapshot to CSV")) {
-                
                 std::string folderName = "snapshots";
 
                 if (!std::filesystem::exists(folderName)) {
@@ -94,11 +78,22 @@ void ui::graph() {
                 }
             }
 
+            if (ImGui::MenuItem("Clear Graph Data")) {
+                // Overwrite the entire array with exact zeros to flatline the graph
+                displayData.assign(displayData.size(), 0.0f);
+                
+                // If they clear it while paused, unpause it and set the 2-second timer
+                isPaused = false; 
+                autoResumeTime = ImGui::GetTime() + 2.0;
+                
+                std::cout << "[SYSTEM] Graph cleared. Waiting 2 seconds for the next data.\n";
+            }
+
             ImGui::EndMenu();
         }
 
         if (ImGui::BeginMenu("View")) {
-            if (ImGui::MenuItem(isPaused ? "Resume Live Feed" : "Freeze Graph")) {
+            if (ImGui::MenuItem(isPaused ? "Resume Live Feed" : "Freeze All Graphs")) {
                 isPaused = !isPaused; 
             }
             ImGui::EndMenu();
@@ -106,55 +101,33 @@ void ui::graph() {
         ImGui::EndMenuBar();
     }
 
-    // ImGui::Text("LIVE Audio Signal from  Microphone");
     ImGui::Separator();
     ImGui::Spacing();
     
-    std::vector<float> audioData = mic.getAudio();
+    // ==========================================
+    // GLOBAL SLIDERS
+    // ==========================================
+    ImGui::SliderFloat("Digital Gain", &globalGain, 0.0f, 10.0f, "x%.1f");
+    ImGui::SliderFloat("Noise Gate", &globalNoiseGate, 0.0f, 0.15f, "%.4f");
+    ImGui::Spacing();
 
-    if (audioData.size() > 0 || isPaused) {
-        
-        static float gain = 1.0f;
-        static float noiseGate = 0.002f;
-
-        ImGui::SliderFloat("Digital Gain", &gain, 0.0f, 10.0f, "x%.1f");
-        ImGui::SliderFloat("Noise Gate", &noiseGate, 0.0f, 0.15f, "%.4f");
-        ImGui::Spacing();
-
-        if (!isPaused && audioData.size() > 0) {
-            if (displayData.size() != audioData.size()) {
-                displayData.resize(audioData.size());
-            }
-            
-            for(size_t i = 0; i < audioData.size(); i++) {
-                float sample = audioData[i];
-
-                if (std::abs(sample) < noiseGate) {
-                    sample = 0.0f; 
-                }
-
-                displayData[i] = sample * gain; 
-            }
-        }
-
-        ImGui::PlotLines(
-            "##Waveform",           
-            displayData.data(),     
-            displayData.size(),     
-            0,                      
-            isPaused ? "FROZEN: Raw Signals" : "Raw Signals", 
-            -1.0f,                  
-            1.0f,                   
-            ImVec2(-1, 200)         
-        );
-    } else {
-        ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Waiting for audio data...");
-    }
+    // ==========================================
+    // DRAW GRAPH
+    // (Math is gone! We just draw the pre-calculated array here)
+    // ==========================================
+    ImGui::PlotLines(
+        "##Waveform",           
+        displayData.data(),     
+        displayData.size(),     
+        0,                      
+        isPaused ? "FROZEN: Raw Signals" : "Live Raw Signals", 
+        -1.0f,                  
+        1.0f,                   
+        ImVec2(-1, 200)         
+    );
 
     ImGui::End();
 }
-
-
 
 void ui::changeTheme() {
     ImGui::SetNextWindowPos(ImVec2(20, 250), ImGuiCond_FirstUseEver);
@@ -191,7 +164,6 @@ void ui::changeTheme() {
     ImGui::End();
 }
 
-
 void ui::audiocapture() {
     ImGui::SetNextWindowPos(ImVec2(350, 450), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(600, 200), ImGuiCond_FirstUseEver);
@@ -221,7 +193,8 @@ void ui::audiocapture() {
         }
     }
 
-    if (ImGui::BeginPopupModal("Warning", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+    // Notification Popup 
+    if (ImGui::BeginPopupModal("Warning", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {   
         ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "[!] Invalid Action");
         ImGui::Separator();
         
@@ -242,11 +215,9 @@ void ui::audiocapture() {
     ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
-
     ImGui::Text("Microphone Status: ");
     ImGui::SameLine();
 
-    // The State Machine reading the hardware driver
     if (mic.isActive()) {
         ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "ON ");
     } else {
@@ -258,47 +229,64 @@ void ui::audiocapture() {
     ImGui::End();
 }
 
-// void ui::audiocapture() {
-//     ImGui::SetNextWindowPos(ImVec2(350, 450), ImGuiCond_FirstUseEver);
-//     ImGui::SetNextWindowSize(ImVec2(600, 200), ImGuiCond_FirstUseEver);
-//     ImGui::Begin("Signal Input");
 
-//     ImGui::Text("MICROPHONE SETTINGS");
-//     ImGui::Separator();
-//     ImGui::Spacing();
 
-//     // 1. Gray out the START button if the mic is ALREADY active
-//     ImGui::BeginDisabled(mic.isActive()); 
-//     if (ImGui::Button("Turn on Microphone")) {
-//         mic.start();
-//     }
-//     ImGui::EndDisabled(); // Always close the disabled block!
+void ui::graph_peak() {
+    ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(600, 200), ImGuiCond_FirstUseEver);
+    ImGui::Begin("Amplitude Graph");
+    // ui::process_audio_data();
 
-//     ImGui::SameLine(); 
+    ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Rolling Peak History");
+    ImGui::Separator();
 
-//     // 2. Gray out the STOP button if the mic is ALREADY offline
-//     ImGui::BeginDisabled(!mic.isActive()); 
-//     if (ImGui::Button("Turn off Microphone")) {
-//         mic.stop();
-//     }
-//     ImGui::EndDisabled(); // Always close the disabled block!
+    ImGui::PlotLines("##PeakWaveform", peakHistory.data(), peakHistory.size(), 0, 
+        isPaused ? "FROZEN: Peak Envelope" : "Live Peak Envelope", 0.0f, 1.0f, ImVec2(-1, 120));
 
-//     ImGui::Spacing();
-//     ImGui::Separator();
-//     ImGui::Spacing();
+    ImGui::End();
+}
 
-//     ImGui::Text("Microphone Status: ");
-//     ImGui::SameLine();
 
-//     if (mic.isActive()) {
-//         ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "ON ");
-//     } else {
-//         ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "OFF");
-//     }
+void ui::process_audio_data() {
+    if (isPaused) return;
+    if (ImGui::GetTime() < autoResumeTime) return;
 
-//     ImGui::End();
-// }
+    std::vector<float> audioData = mic.getAudio();
+    if (audioData.empty()) return;
 
+    // if (displayData.size() != audioData.size()) {
+    //     displayData.resize(audioData.size());
+    // }
+
+    // --- SAFETY CHECK 1: Initialize main graph array ---
+    if (displayData.size() != audioData.size()) {
+        displayData.resize(audioData.size(), 0.0f);
+    }
+
+    // --- SAFETY CHECK 2: Initialize Peak array (FIXES SEGFAULT!) ---
+    if (peakHistory.empty()) {
+        peakHistory.resize(300, 0.0f);
+    }
+
+    float currentPeak = 0.0f;
+
+    for (size_t i = 0; i < audioData.size(); i++) {
+        float sample = audioData[i];
+        
+        if (std::abs(sample) < globalNoiseGate) {
+            sample = 0.0f; 
+        }
+        
+        displayData[i] = sample * globalGain; 
+
+        if (std::abs(displayData[i]) > currentPeak) {
+            currentPeak = std::abs(displayData[i]);
+        }
+    }
+
+    peakHistory.erase(peakHistory.begin());
+    peakHistory.push_back(currentPeak);
+}
 
 
 

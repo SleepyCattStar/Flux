@@ -21,9 +21,6 @@ int main() {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
-    // ==========================================
-    // IMGUI SETUP (Do not touch)
-    // ==========================================
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -45,15 +42,19 @@ int main() {
 
 
         myDashboard.render(); 
-        myDashboard.graph();
         myDashboard.changeTheme();
         myDashboard.audiocapture();
+        // myDashboard.graph_time_domain();
+
+        myDashboard.process_audio_data();
+        myDashboard.graph();
+        myDashboard.graph_peak();
+        
 
 
 
-        // ----------------------------------------
 
-        // Physically draw the pixels to the Linux window
+
         ImGui::Render();
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
