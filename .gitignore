@@ -1,0 +1,19 @@
+# Ignore build artifacts
+build/
+
+# Ignore Visual Studio Code settings
+.vscode/
+
+# Ignore object files and executables
+*.o
+*.obj
+*.so
+*.dll
+*.exe
+
+# Ignore log files
+*.log
+
+# Ignore env
+.env
+.env.local
