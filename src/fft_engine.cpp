@@ -45,3 +45,23 @@ void fft::process(const std::vector<float>& audioInput, std::vector<float>& outp
         outputMagnitudes[i] = static_cast<float>(std::abs(data[i]));
     }
 }
+
+// traditional fast fourier without optimization
+void fft::calculatefft_On2(const std::vector<float>& audioInput, std::vector<float>& outputMagnitudes){
+    size_t N = audioInput.size();
+
+    if(N==0) return;
+
+    outputMagnitudes.assign(N/2 ,0.0f);   // fill zero
+    for(size_t k = 0 ; k< N/2; ++k){
+        complex sum(0.0,0.0);
+        for(size_t n =0 ; n<N ; ++n){
+            double angle = -2.0* M_PI * k * n/N;
+            complex euler_part = std::polar(1.0,angle);
+            sum+= complex(audioInput[n],0.0) * euler_part;
+        }
+        outputMagnitudes[k] = static_cast<float>(std::abs(sum) / N);
+    }
+
+}
+

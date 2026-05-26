@@ -50,7 +50,7 @@ int main() {
         myDashboard.graph();
         myDashboard.graph_peak();
         myDashboard.graph_fft();
-        
+        myDashboard.performance_analysis();
 
 
 

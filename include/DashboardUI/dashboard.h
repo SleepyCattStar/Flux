@@ -17,13 +17,13 @@ class ui {
         void graph_peak();
         void process_audio_data();
         void graph_fft();
-
+        void performance_analysis();
 
     private:
         audio mic;
         std::vector<float> displayData;   // the data which is used to plot those graphs
         std::vector<float> peakHistory;      // to plot the maxi graph.
-        
+
         fft engine;  // instance of class fft to use the computation functions
         std::vector<float> fftMagnitudes;   
         bool isPaused = false;

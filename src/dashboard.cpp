@@ -7,7 +7,7 @@
 #include<fstream>   // to make export data to csv file 
 #include<string>    
 #include<filesystem>  
-// #include<chrono>
+#include<chrono>   // for comparing traditional FFT to coole tukey algo
 
 void ui::render() {
     ImGui::SetNextWindowPos(ImVec2(20, 20), ImGuiCond_FirstUseEver);
@@ -141,8 +141,8 @@ void ui::graph() {
 }
 
 void ui::changeTheme() {
-    ImGui::SetNextWindowPos(ImVec2(20, 250), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(300, 150), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(20, 600), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(350, 100), ImGuiCond_FirstUseEver);
     ImGui::Begin("Theme Settings");
 
     static float my_color[4] = { 0.2f, 0.4f, 0.8f, 1.0f }; // Defaults to a nice blue
@@ -373,6 +373,63 @@ void ui::graph_fft() {
 
     ImGui::End();
 }
+
+
+void ui::performance_analysis() {
+    ImGui::SetNextWindowPos(ImVec2(20, 300), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(300, 150), ImGuiCond_FirstUseEver);
+    ImGui::Begin("Algorithm Comparison: O(N^2) vs O(N log N)");
+
+    static double naiveTime = 0.0;
+    static double fftTime = 0.0;
+    static bool benchmarkRun = false;
+
+    ImGui::TextWrapped(" Naive DFT vs Cooley-Tukey FFT");
+    ImGui::Separator();
+    
+    if (ImGui::Button("Run Performance Test", ImVec2(200, 30))) {
+        if (!displayData.empty()) {
+            std::vector<float> tempMag;
+            
+            auto startNaive = std::chrono::high_resolution_clock::now();
+            engine.calculatefft_On2(displayData, tempMag);
+            auto endNaive = std::chrono::high_resolution_clock::now();
+            
+            auto startFFT = std::chrono::high_resolution_clock::now();
+            engine.process(displayData, tempMag);
+            auto endFFT = std::chrono::high_resolution_clock::now();
+
+            std::chrono::duration<double, std::milli> naiveDuration = endNaive - startNaive;
+            std::chrono::duration<double, std::milli> fftDuration = endFFT - startFFT;
+
+            naiveTime = naiveDuration.count();
+            fftTime = fftDuration.count();
+            benchmarkRun = true;
+        }
+        
+         if(ImGui::IsItemHovered()){
+           ImGui::SetTooltip("compare algorithm execution speeds"); 
+        }
+       
+    }
+    ImGui::Spacing();
+
+    if (benchmarkRun) {
+        ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Naive DFT O(N^2):   %.3f ms", naiveTime);
+        ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Fast FFT O(N log N): %.3f ms", fftTime);
+        
+        ImGui::Spacing();
+        float speedup = static_cast<float>(naiveTime / fftTime);
+        ImGui::TextColored(ImVec4(0.0f, 1.0f, 1.0f, 1.0f), "Result: Cooley-Tukey is %.1fx faster", speedup);
+    }
+
+
+
+    ImGui::End();
+
+
+}
+
 
 
 // Basically all the buttons that'll be designed will be in this place, and defined in dashboard.h, and then called in main.cpp. 
