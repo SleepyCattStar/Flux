@@ -17,3 +17,6 @@ build/
 # Ignore env
 .env
 .env.local
+
+# file name, I created this on my local machine
+important

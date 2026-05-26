@@ -49,6 +49,7 @@ int main() {
         myDashboard.process_audio_data();
         myDashboard.graph();
         myDashboard.graph_peak();
+        myDashboard.graph_fft();
         
 
 

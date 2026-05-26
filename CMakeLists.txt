@@ -9,6 +9,7 @@ add_executable(${PROJECT_NAME}
     src/main.cpp
     src/dashboard.cpp
     src/audio.cpp
+    src/fft_engine.cpp
     vendor/imgui/imgui.cpp
     vendor/imgui/imgui_draw.cpp
     vendor/imgui/imgui_tables.cpp

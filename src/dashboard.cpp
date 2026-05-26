@@ -2,10 +2,11 @@
 
 #include "DashboardUI/dashboard.h"         // audio mic, is declared here/
 #include "fourier/audio_capture.h"     // for the class audio, class instance mic, and the function start(), stop()
-#include <iostream>
+#include "fourier/fft_engine.h"      // for the class fft, and the function process() which does the FFT and outputs the magnitudes.
+#include<iostream>
 #include<fstream>   // to make export data to csv file 
 #include<string>    
-#include <filesystem>  
+#include<filesystem>  
 #include<chrono>
 
 void ui::render() {
@@ -36,9 +37,6 @@ void ui::graph() {
     
     ImGui::Begin("Live Audio Graph", NULL, ImGuiWindowFlags_MenuBar);
 
-    // ==========================================
-    // THE MENU BAR (Your exact File/CSV Logic!)
-    // ==========================================
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             
@@ -103,18 +101,11 @@ void ui::graph() {
 
     ImGui::Separator();
     ImGui::Spacing();
-    
-    // ==========================================
-    // GLOBAL SLIDERS
-    // ==========================================
+
     ImGui::SliderFloat("Digital Gain", &globalGain, 0.0f, 10.0f, "x%.1f");
     ImGui::SliderFloat("Noise Gate", &globalNoiseGate, 0.0f, 0.15f, "%.4f");
     ImGui::Spacing();
 
-    // ==========================================
-    // DRAW GRAPH
-    // (Math is gone! We just draw the pre-calculated array here)
-    // ==========================================
     ImGui::PlotLines(
         "##Waveform",           
         displayData.data(),     
@@ -254,16 +245,13 @@ void ui::process_audio_data() {
     std::vector<float> audioData = mic.getAudio();
     if (audioData.empty()) return;
 
-    // if (displayData.size() != audioData.size()) {
-    //     displayData.resize(audioData.size());
-    // }
 
-    // --- SAFETY CHECK 1: Initialize main graph array ---
+    // These 2 checks to avoid segmentation fault, cuz it's possible that the graph is trying to plot while the audio data is being resized in the background thread. So we resize it here to make sure it's always the same size as the audio data, and filled with zeros if it was expanded. This way the graph can safely read from it without crashing, and it'll just show flatline until the new audio data comes in.
     if (displayData.size() != audioData.size()) {
         displayData.resize(audioData.size(), 0.0f);
     }
 
-    // --- SAFETY CHECK 2: Initialize Peak array (FIXES SEGFAULT!) ---
+    
     if (peakHistory.empty()) {
         peakHistory.resize(300, 0.0f);
     }
@@ -286,10 +274,59 @@ void ui::process_audio_data() {
 
     peakHistory.erase(peakHistory.begin());
     peakHistory.push_back(currentPeak);
+
+    
+    // Calculate FFT magnitudes for the current audio data
+    // fft engine;
+    // std::vector<float> fftMagnitudes;
+
+    // those variables moveed inside dashboard.h as class members
+    // so it can be used globally in the ui class, and not just in this function.
+
+    engine.process(displayData, fftMagnitudes);
+
+    // Signal Analysis Part here (eg. peak detection, frequency band analysis)
+
+    //Peak Analysis
+
+    if(!fftMagnitudes.empty()) {
+        auto maxIt = std::max_element(fftMagnitudes.begin(), fftMagnitudes.end());
+        // size_t maxIndex = std::distance(fftMagnitudes.begin(), maxIt);
+    }
 }
 
 
+void ui::graph_fft() {
+    ImGui::SetNextWindowPos(ImVec2(650, 250), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
+    ImGui::Begin("FFT Magnitude Graph");
 
+    ImGui::TextColored(ImVec4(0.0f, 1.0f, 1.0f, 1.0f), "FREQUENCY DOMAIN ANALYSIS");
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    static float fftMaxScale = 1.0f; 
+    ImGui::SliderFloat("FFT Visual Zoom", &fftMaxScale, 0.001f, 50.0f, "Max: %.3f");
+    ImGui::Spacing();
+
+    if (!fftMagnitudes.empty()) {
+        
+        ImGui::PlotHistogram(
+            "##FFTSpectrum", 
+            fftMagnitudes.data(), 
+            fftMagnitudes.size(), 
+            0, 
+            isPaused ? "FROZEN: Spectrum" : "Live Frequency Spectrum", 
+            0.0f,         // Minimum Y-bound
+            fftMaxScale,  // Dynamic Maximum Y-bound from your slider
+            ImVec2(-1, 220) // -1 forces the histogram to stretch to the window border
+        );
+    } else {
+        ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Waiting for live  audio stream...");
+    }
+
+    ImGui::End();
+}
 
 
 // Basically all the buttons that'll be designed will be in this place, and defined in dashboard.h, and then called in main.cpp. 
