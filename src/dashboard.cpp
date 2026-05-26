@@ -7,24 +7,44 @@
 #include<fstream>   // to make export data to csv file 
 #include<string>    
 #include<filesystem>  
-#include<chrono>
+// #include<chrono>
 
 void ui::render() {
     ImGui::SetNextWindowPos(ImVec2(20, 20), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
-    ImGui::Begin("Signal Analyser Dashboard");
+    ImGui::SetNextWindowSize(ImVec2(350, 300), ImGuiCond_FirstUseEver);
+    ImGui::Begin("Flux Dashboard");
 
-
-    if(ImGui::Button("Start")) {
+    if (ImGui::Button("Start Analysis")) {
         std::cout << "Start Button Pressed !\n";
     }
 
     ImGui::Separator();
-    ImGui::Text("This is a simple dashboard for the Fourier Signal Analyser.");
-    ImGui::Text("Custom Theme");
-    ImGui::Text(" Live Audio Graph");
-    ImGui::Text(" Live Fourier Analysis");
-    ImGui::Text("Uses Threads for smoother performance");
+    ImGui::Spacing();
+    
+    ImGui::TextWrapped("This is a simple dashboard for the Fourier Signal Analyser.");
+    ImGui::Spacing();
+
+    ImGui::BulletText("Custom Theme");
+    ImGui::BulletText("Live Audio Graph");
+    ImGui::BulletText("Live Fourier Analysis");
+    ImGui::BulletText("Dominant Frequency");
+    ImGui::BulletText("Amplitude Graph");
+    ImGui::BulletText("Uses Threads for smoother performance");
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    ImGui::Text("Project Source:");
+    
+    if (ImGui::Button("Copy GitHub Link")) {
+        ImGui::SetClipboardText("https://github.com/SleepyCattStar/Flux");
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Copy to clipboard");
+
+        // a notification here could be added for UI improvements later 
+    }
 
     ImGui::End();
 }
@@ -246,7 +266,8 @@ void ui::process_audio_data() {
     if (audioData.empty()) return;
 
 
-    // These 2 checks to avoid segmentation fault, cuz it's possible that the graph is trying to plot while the audio data is being resized in the background thread. So we resize it here to make sure it's always the same size as the audio data, and filled with zeros if it was expanded. This way the graph can safely read from it without crashing, and it'll just show flatline until the new audio data comes in.
+
+    // TO make sure the plot gets all the data points, if not there, its going to give out errors. So we avoid that by resizing it and filling empty ones with zero/
     if (displayData.size() != audioData.size()) {
         displayData.resize(audioData.size(), 0.0f);
     }
@@ -291,7 +312,18 @@ void ui::process_audio_data() {
 
     if(!fftMagnitudes.empty()) {
         auto maxIt = std::max_element(fftMagnitudes.begin(), fftMagnitudes.end());
-        // size_t maxIndex = std::distance(fftMagnitudes.begin(), maxIt);
+        size_t maxBin = static_cast<size_t>(std::distance(fftMagnitudes.begin(), maxIt));
+        float maxAmplitude = *maxIt;
+
+        if (maxAmplitude > globalNoiseGate) { 
+            float sampleRate = 44100.0f; // Adjust to the rate , the mic uses . Mine uses this
+            size_t FFT_SIZE = displayData.size(); 
+            
+            // Convert bin index to  Hz
+            dominantFrequency = (maxBin * sampleRate) / FFT_SIZE;
+        } else {
+            dominantFrequency = 0.0f; 
+        }
     }
 }
 
@@ -301,9 +333,23 @@ void ui::graph_fft() {
     ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
     ImGui::Begin("FFT Magnitude Graph");
 
+
+
+
     ImGui::TextColored(ImVec4(0.0f, 1.0f, 1.0f, 1.0f), "FREQUENCY DOMAIN ANALYSIS");
     ImGui::Separator();
     ImGui::Spacing();
+
+    if (dominantFrequency > 0.0f) {
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Dominant Frequency: %.1f Hz", dominantFrequency);
+    } else {
+        ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Dominant Frequency: -- Hz (Signal Silent)");
+    }
+    
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+
 
     static float fftMaxScale = 1.0f; 
     ImGui::SliderFloat("FFT Visual Zoom", &fftMaxScale, 0.001f, 50.0f, "Max: %.3f");

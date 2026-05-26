@@ -21,14 +21,16 @@ class ui {
 
     private:
         audio mic;
-        std::vector<float> displayData;
-        std::vector<float> peakHistory;
-        fft engine;
+        std::vector<float> displayData;   // the data which is used to plot those graphs
+        std::vector<float> peakHistory;      // to plot the maxi graph.
+        
+        fft engine;  // instance of class fft to use the computation functions
         std::vector<float> fftMagnitudes;   
         bool isPaused = false;
         double autoResumeTime = 0.0;
         float globalGain = 1.0f;
         float globalNoiseGate = 0.002f;
+        float dominantFrequency = 0.0f;
 
 
 };
