@@ -7,7 +7,7 @@
 #include<fstream>   // to make export data to csv file 
 #include<string>    
 #include<filesystem>  
-#include<chrono>   // for comparing traditional FFT to coole tukey algo
+#include<chrono>   // for comparing execution speed of traditional FFT to coole tukey algo
 
 void ui::render() {
     ImGui::SetNextWindowPos(ImVec2(20, 20), ImGuiCond_FirstUseEver);
@@ -406,7 +406,7 @@ void ui::performance_analysis() {
             fftTime = fftDuration.count();
             benchmarkRun = true;
         }
-        
+
          if(ImGui::IsItemHovered()){
            ImGui::SetTooltip("compare algorithm execution speeds"); 
         }
