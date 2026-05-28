@@ -20,3 +20,6 @@ build/
 
 # file name, I created this on my local machine
 important
+
+linux-build/
+windows-build/

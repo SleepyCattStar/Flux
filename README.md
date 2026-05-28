@@ -60,3 +60,11 @@ make
 ```bash
 ./FourierAnalyzer
 ```
+
+## Download / Installation
+
+If you don't want to build the project from the source . Pre-compiled binaries are available for Windows and Linux.
+
+1. Go to the [Releases Page](https://github.com/SleepyCattStar/Flux/releases/latest).
+2. Download the executable for your operating system (`FourierAnalyzer.exe` for Windows, or the Linux binary).
+3. Extract the file and run it directly. No installation required!
