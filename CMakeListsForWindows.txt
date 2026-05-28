@@ -1,0 +1,39 @@
+// USE THIS CMakeLists.txt instead of the one there if you're using windows.  ( the m link library isn't required for windows)
+
+cmake_minimum_required(VERSION 3.10)
+
+project(FourierAnalyzer VERSION 1.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+add_executable(${PROJECT_NAME} 
+    src/main.cpp
+    src/dashboard.cpp
+    src/audio.cpp
+    src/fft_engine.cpp
+    vendor/imgui/imgui.cpp
+    vendor/imgui/imgui_draw.cpp
+    vendor/imgui/imgui_tables.cpp
+    vendor/imgui/imgui_widgets.cpp
+    vendor/imgui/backends/imgui_impl_glfw.cpp
+    vendor/imgui/backends/imgui_impl_opengl3.cpp
+)
+
+target_include_directories(${PROJECT_NAME} PRIVATE 
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/vendor/imgui
+    ${CMAKE_SOURCE_DIR}/vendor/imgui/backends
+)
+
+find_package(OpenGL REQUIRED)
+find_package(Threads REQUIRED)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    OpenGL::GL            # Linux hardware graphics
+    glfw                  # Window manager
+    fftw3                 # Fast Fourier Transform math library
+    Threads::Threads      # Native multithreading (POSIX)
+)
+
+
