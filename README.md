@@ -9,7 +9,7 @@ Flux is a multi-threaded, real-time digital signal processing (DSP) application 
 * **Fundamental Frequency (F0) Tracking:** Automated peak detection that calculates and isolates the dominant frequency pitch (in Hz) from live audio streams, filtering out ambient static and harmonic resonance.
 * **Algorithmic Profiling:** Built-in multi-threaded benchmarking suite that compares the execution speed of the $O(N \log N)$ FFT against a Naive $O(N^2)$ Discrete Fourier Transform (DFT) in real-time.
 * **Rolling Peak Envelope:** Continuous tracking of maximum amplitude peaks over time to monitor signal strength.
-* **Asynchronous Architecture:** Heavy mathematical computations are offloaded to detached `std::thread` workers with `std::atomic` state locking, preventing UI thread blocking.
+* **Multithreaded Architecture:** Heavy mathematical calculations are moved to background threads and safely managed using standard mutexes, keeping the user interface smooth and completely responsive.
 
 ---
 
@@ -35,3 +35,28 @@ Built on top of Dear ImGui and OpenGL. It utilizes responsive grid mathematics t
 
 ---
 
+
+### 4. Building from Source
+
+**1. Clone the repository**
+```bash
+git clone [https://github.com/SleepyCattStar/Flux.git](https://github.com/SleepyCattStar/Flux.git)
+cd Flux
+```
+
+**2. Generate build files using CMake**
+```bash
+mkdir build
+cd build
+cmake ..
+```
+
+**3. Compile the executable**
+```bash
+make
+```
+
+**4. Run the application**
+```bash
+./FourierAnalyzer
+```
