@@ -68,3 +68,46 @@ If you don't want to build the project from the source . Pre-compiled binaries a
 1. Go to the [Releases Page](https://github.com/SleepyCattStar/Flux/releases/latest).
 2. Download the executable for your operating system (`FourierAnalyzer.exe` for Windows, or the Linux binary).
 3. Extract the file and run it directly. No installation required!
+
+
+# DOWNLOAD (using Docker)
+
+
+For users who prefer to run the application inside an isolated sandbox environment without installing dependencies locally, a `Dockerfile` is provided. Since this is a graphical application that utilizes OpenGL and GLFW, extra arguments are **needed** to bridge your host machine's display server with the Docker container.
+
+### 1. Build the Docker Image
+
+First, navigate to the root directory of the project where the `Dockerfile` is located and build the image:
+
+```bash
+docker build -t flux-analyzer .
+```
+
+---
+
+### 2. Launching the Container
+
+Select the execution command matching your host operating system below:
+
+####  For Linux Hosts (X11 / Wayland)
+
+Before starting the container, you must grant local Docker containers permission to interface with your native X11 display server. Run this command in your host terminal:
+
+```bash
+xhost +local:docker
+```
+
+Once permissions are enabled, launch the container by mapping your system display socket and graphics rendering hardware devices:
+
+```bash
+docker run -it \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
+  --device /dev/dri \
+  flux-analyzer
+```
+
+*Note: Once you close the application, you can revoke the display permissions on your host machine for security by running `xhost -local:docker`.*
+
+---
+
