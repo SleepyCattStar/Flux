@@ -328,15 +328,69 @@ void ui::process_audio_data() {
 }
 
 
+// void ui::graph_fft() {
+//     ImGui::SetNextWindowPos(ImVec2(650, 250), ImGuiCond_FirstUseEver);
+//     ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
+//     ImGui::Begin("FFT Magnitude Graph");
+
+
+
+
+//     ImGui::TextColored(ImVec4(0.0f, 1.0f, 1.0f, 1.0f), "FREQUENCY DOMAIN ANALYSIS");
+//     ImGui::Separator();
+//     ImGui::Spacing();
+
+//     if (dominantFrequency > 0.0f) {
+//         ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Dominant Frequency: %.1f Hz", dominantFrequency);
+//     } else {
+//         ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Dominant Frequency: -- Hz (Signal Silent)");
+//     }
+    
+//     ImGui::Spacing();
+//     ImGui::Separator();
+//     ImGui::Spacing();
+
+
+//     static float fftMaxScale = 1.0f; 
+//     ImGui::SliderFloat("FFT Visual Zoom", &fftMaxScale, 0.001f, 50.0f, "Max: %.3f");
+//     ImGui::Spacing();
+
+//     if (!fftMagnitudes.empty()) {
+        
+//         ImGui::PlotHistogram(
+//             "##FFTSpectrum", 
+//             fftMagnitudes.data(), 
+//             fftMagnitudes.size(), 
+//             0, 
+//             isPaused ? "FROZEN: Spectrum" : "Live Frequency Spectrum", 
+//             0.0f,         // Minimum Y-bound
+//             fftMaxScale,  // Dynamic Maximum Y-bound from your slider
+//             ImVec2(-1, 220) // -1 forces the histogram to stretch to the window border
+//         );
+//     } else {
+//         ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Waiting for live  audio stream...");
+//     }
+
+//     ImGui::End();
+// }
+
 void ui::graph_fft() {
     ImGui::SetNextWindowPos(ImVec2(650, 250), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
     ImGui::Begin("FFT Magnitude Graph");
 
-
-
-
     ImGui::TextColored(ImVec4(0.0f, 1.0f, 1.0f, 1.0f), "FREQUENCY DOMAIN ANALYSIS");
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    static int visualMode = 0; // 0 = Histogram, 1 = Line Graph
+    ImGui::Text("Display Mode:");
+    ImGui::SameLine();
+    ImGui::RadioButton("Histogram", &visualMode, 0);
+    ImGui::SameLine();
+    ImGui::RadioButton("Line Graph", &visualMode, 1);
+    
+    ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
 
@@ -350,25 +404,39 @@ void ui::graph_fft() {
     ImGui::Separator();
     ImGui::Spacing();
 
-
     static float fftMaxScale = 1.0f; 
     ImGui::SliderFloat("FFT Visual Zoom", &fftMaxScale, 0.001f, 50.0f, "Max: %.3f");
     ImGui::Spacing();
 
     if (!fftMagnitudes.empty()) {
-        
-        ImGui::PlotHistogram(
-            "##FFTSpectrum", 
-            fftMagnitudes.data(), 
-            fftMagnitudes.size(), 
-            0, 
-            isPaused ? "FROZEN: Spectrum" : "Live Frequency Spectrum", 
-            0.0f,         // Minimum Y-bound
-            fftMaxScale,  // Dynamic Maximum Y-bound from your slider
-            ImVec2(-1, 220) // -1 forces the histogram to stretch to the window border
-        );
+        const char* plotLabel = isPaused ? "FROZEN: Spectrum" : "Live Frequency Spectrum";
+        ImVec2 plotSize = ImVec2(-1, 220); 
+
+        if (visualMode == 0) {
+            ImGui::PlotHistogram(
+                "##FFTSpectrumBars", 
+                fftMagnitudes.data(), 
+                fftMagnitudes.size(), 
+                0, 
+                plotLabel, 
+                0.0f,         
+                fftMaxScale,  
+                plotSize 
+            );
+        } else {
+            ImGui::PlotLines(
+                "##FFTSpectrumLines", 
+                fftMagnitudes.data(), 
+                fftMagnitudes.size(), 
+                0, 
+                plotLabel, 
+                0.0f,         
+                fftMaxScale,  
+                plotSize 
+            );
+        }
     } else {
-        ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Waiting for live  audio stream...");
+        ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Waiting for live audio stream...");
     }
 
     ImGui::End();
